@@ -11,6 +11,7 @@ public class Juego extends InterfaceJuego
 	private Entorno entorno;
 	private Isla[] islas;
 	private Pep pep;
+	private Disparo disparo;
 	
 	
 	
@@ -105,6 +106,19 @@ public class Juego extends InterfaceJuego
         if (!pepSobreIsla && (pep.estaCayendo() || pep.getY() < 500)) {
             pep.caer();
         }
+        if (entorno.sePresiono('c') & disparo == null) {
+            disparo = pep.disparar();
+        }
+            // Mover y dibujar el disparo si existe
+            if (disparo != null) {
+                disparo.dibujar(entorno);
+                disparo.mover();
+                // Verificar si el disparo colisiona con el entorno
+                if (disparo.colisionEntorno(entorno)) {
+                    disparo = null;
+                } 
+                
+            }
 
         // Dibujar las islas
         for (Isla isla : islas) {
