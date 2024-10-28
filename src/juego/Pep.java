@@ -21,6 +21,7 @@ public class Pep {
         this.color = color;
         this.enSuelo = true;
         this.velocidadY = 0;
+        this.ultimaDir="der";
         
     }
 

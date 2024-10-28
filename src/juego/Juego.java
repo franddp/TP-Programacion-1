@@ -1,30 +1,32 @@
 package juego;
 
-
 import java.awt.Color;
-
 import entorno.Entorno;
 import entorno.InterfaceJuego;
 
-public class Juego extends InterfaceJuego
-{
-	private Entorno entorno;
-	private Isla[] islas;
-	private Pep pep;
-	private Disparo disparo;
-	
-	
-	
-	Juego()
-	{
-		// Inicializa el objeto entorno
-		this.entorno = new Entorno(this, "Proyecto para TP", 800, 600);
-		
-		// Crear las islas
+public class Juego extends InterfaceJuego {
+    private Entorno entorno;
+    private Isla[] islas;
+    private Pep pep;
+    private Disparo disparo;
+    private Gnomo[] gnomos;
+    private Casa casa; // Clase Casa
+    private int gnomosEnPantalla; // Contador de gnomos en pantalla
+    private int maxGnomos; // Número máximo de gnomos en pantalla
+
+    // Constructor de la clase Juego
+    public Juego() {
+        this.entorno = new Entorno(this, "Proyecto para TP", 800, 600);
+        
+        // Inicializar variables
+        maxGnomos = 4; // Establecer el número máximo de gnomos
+        gnomosEnPantalla = 0; // Inicialmente no hay gnomos
+
+        // Crear las islas
         islas = new Isla[15];
         for (int i = 0; i < islas.length; i++) {
             int x, y;
-            
+
             if (i < 5) {
                 x = 50 + i * 170;
                 y = 500;
@@ -44,18 +46,26 @@ public class Juego extends InterfaceJuego
 
             islas[i] = new Isla(x, y, 120, 40, Color.GREEN);
         }
-     // Crear a Pep y situarlo en la isla más baja
+
+        // Crear la casa en la isla más alta
+        int xCasa = 400; // Ajustar según la posición de la isla
+        int yCasa = 100 - 35; // La casa se sitúa encima de la isla
+        this.casa = new Casa(xCasa, yCasa, 60, 30, Color.RED); // Crear la casa
+
+        // Crear a Pep y situarlo en la isla más baja
         int posicionInicialPepX = islas[0].getX(); // Misma X que la primera isla
         int posicionInicialPepY = islas[0].getY() - 50 / 2; // Justo sobre la isla más baja
         this.pep = new Pep(posicionInicialPepX, posicionInicialPepY, 25, 25, Color.RED);
-		
-		this.entorno.iniciar();
-	}
 
-	
-	public void tick()
-	{
-		// Mover Pep
+        // Inicializar gnomos
+        gnomos = new Gnomo[maxGnomos]; // Puedes ajustar la cantidad de gnomos
+
+        this.entorno.iniciar();
+    }
+
+    // Método que se llama en cada tick del juego
+    public void tick() {
+        // Mover Pep
         if (entorno.estaPresionada(entorno.TECLA_DERECHA)) {
             pep.moverDerecha(800); // Limitar al borde derecho
         }
@@ -73,7 +83,7 @@ public class Juego extends InterfaceJuego
 
         // Detectar colisiones y detener la caída si Pep está cayendo
         for (Isla isla : islas) {
-            // Verificar si Pep está tocando la isla desde abajo (para bloquear subir desde abajo)
+            // Verificar si Pep está tocando la isla desde abajo
             if (pep.estaSaltando() && 
                 pep.getY() - pep.getAlto() / 2 <= isla.getY() + isla.getAlto() / 2 && // Parte superior de Pep toca la parte inferior de la isla
                 pep.getY() > isla.getY() && // Pep está debajo de la isla
@@ -106,31 +116,82 @@ public class Juego extends InterfaceJuego
         if (!pepSobreIsla && (pep.estaCayendo() || pep.getY() < 500)) {
             pep.caer();
         }
-        if (entorno.sePresiono('c') & disparo == null) {
+
+        // Manejo de disparos
+        if (entorno.sePresiono('c') && disparo == null) {
             disparo = pep.disparar();
         }
-            // Mover y dibujar el disparo si existe
-            if (disparo != null) {
-                disparo.dibujar(entorno);
-                disparo.mover();
-                // Verificar si el disparo colisiona con el entorno
-                if (disparo.colisionEntorno(entorno)) {
-                    disparo = null;
-                } 
-                
-            }
+        
+        // Mover y dibujar el disparo si existe
+        if (disparo != null) {
+            disparo.dibujar(entorno);
+            disparo.mover();
+            // Verificar si el disparo colisiona con el entorno
+            if (disparo.colisionEntorno(entorno)) {
+                disparo = null;
+            } 
+        }
 
-        // Dibujar las islas
+        // Mover y gestionar gnomos
+        for (int i = 0; i < gnomos.length; i++) {
+            if (gnomos[i] != null) {
+                gnomos[i].mover(); // Mover cada gnomo
+                gnomos[i].actualizar(islas); // Actualizar posición del gnomo
+
+                // Verificar si el gnomo ha caído fuera de la pantalla
+                if (gnomos[i].getY() > 600) {
+                    gnomos[i] = null; // Eliminar el gnomo
+                    gnomosEnPantalla--; // Disminuir el contador de gnomos
+                }
+            }
+        }
+
+        // Generar nuevos gnomos si hay espacio
+        if (gnomosEnPantalla < maxGnomos) {
+            crearGnomoDesdeCasa();
+        }
+
+        // Dibuja las islas, Pep, disparos y gnomos
         for (Isla isla : islas) {
             isla.dibujar(entorno);
         }
-        pep.dibujar(entorno);
-    }
-	
+        casa.dibujar(entorno); // Dibuja la casa
+        pep.dibujar(entorno); // Dibuja a Pep
 
-	@SuppressWarnings("unused")
-	public static void main(String[] args)
-	{
-		Juego juego = new Juego();
-	}
+        for (Gnomo gnomo : gnomos) {
+            if (gnomo != null) {
+                gnomo.dibujar(entorno);
+            }
+        }
+    }
+
+ // Método que crea un gnomo en la posición de la casa
+    private void crearGnomoDesdeCasa() {
+        if (gnomosEnPantalla < maxGnomos) {
+            // Ajustar la posición del gnomo a la casa
+            int xGnomo = casa.getX() + casa.getAncho() / 2 - 12; // Centro de la casa
+
+            // Obtener la isla más alta y su posición
+            Isla islaMasAlta = islas[0]; // Inicializamos con la primera isla
+            for (Isla isla : islas) {
+                if (isla.getY() < islaMasAlta.getY()) { // Encontrar la isla más alta
+                    islaMasAlta = isla;
+                }
+            }
+            
+            int yGnomo = islaMasAlta.getY() - 10; // Ajustar la posición del gnomo justo sobre la isla
+
+            for (int i = 0; i < gnomos.length; i++) {
+                if (gnomos[i] == null) { // Solo crear un gnomo si hay espacio
+                    gnomos[i] = new Gnomo(xGnomo, yGnomo, 25, 25, Color.BLUE); // Crear el gnomo en la posición de la casa
+                    gnomosEnPantalla++; // Incrementar el contador de gnomos en pantalla
+                    break; // Salir del bucle una vez que se crea un gnomo
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new Juego(); // Iniciar el juego
+    }
 }
