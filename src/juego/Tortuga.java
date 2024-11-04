@@ -5,106 +5,111 @@ import java.util.Random;
 import entorno.Entorno;
 
 public class Tortuga {
-    private double x;
-    private double y;
-    private double ancho;
-    private double alto;
-    private double velocidadX;
-    private boolean enIsla;
+    private float x, y;
+    private int ancho, alto;
+    private float direccion; // 1 para derecha, -1 para izquierda
+    private boolean enIsla; // Indica si está en una isla
+    private int contadorEspera; // Contador para el tiempo de espera
+    private int tiempoEspera = 120; // Tiempo de espera en ticks
     private Random random;
-    private Color color;
-    private Isla islaActual;
 
-    // Constructor con valores fijos para ancho y alto
-    public Tortuga(double limiteCasaGnomosX, double limiteCasaGnomosAncho) {
-        this.ancho = 25; // Valor fijo para evitar tamaños excesivos
-        this.alto = 25;  // Valor fijo para evitar tamaños excesivos
-        this.y = 0; // Aparece en la parte superior de la pantalla
-        this.velocidadX = 0.5;
-        this.enIsla = false;
-        this.color = Color.PINK;
+    public Tortuga(int ancho, int alto) {
+        this.ancho = ancho;
+        this.alto = alto;
         this.random = new Random();
-        generarPosicionAleatoria(limiteCasaGnomosX, limiteCasaGnomosAncho);
+        this.x = generarPosicionXInicial(); // Genera una posición aleatoria en X
+        this.y = 0; // Comienza cayendo desde la parte superior
+        this.direccion = (random.nextFloat() < 0.5) ? 1 : -1; // Dirección inicial aleatoria
+        this.enIsla = false;
+        this.contadorEspera = 0;
     }
 
-    // Método para generar una posición aleatoria en X, evitando el área de la casa de los gnomos
-    private void generarPosicionAleatoria(double limiteCasaGnomosX, double limiteCasaGnomosAncho) {
-        do {
-            this.x = random.nextInt(800 - (int) ancho);
-        } while (x >= limiteCasaGnomosX && x <= (limiteCasaGnomosX + limiteCasaGnomosAncho));
-    }
-
-    // Método para actualizar el estado de la tortuga
-    public void actualizar(Isla[] islas, Casa casa) {
-        if (!enIsla) {
-            caer(islas, casa); // La tortuga sigue cayendo hasta que llegue a una isla
-        } else {
-            moverEnIsla(); // Una vez en la isla, se mueve de un lado a otro
+    // Genera una posición inicial en X, evitando el área de la casa de los gnomos
+    private float generarPosicionXInicial() {
+        float posicionX = random.nextInt(800 - ancho);
+        if (posicionX > 300 && posicionX < 500) { // Ajusta estos valores según la posición de la casa
+            posicionX = 100; // Alternativa en caso de que esté en el área de la casa
         }
+        return posicionX;
     }
 
-    // Método para verificar si la tortuga debe caer o quedarse en la isla
-    private void caer(Isla[] islas, Casa casa) {
-        for (Isla isla : islas) {
-            if (colisionConIsla(isla) && !islaEsCasa(isla, casa) && !islaOcupada(islas, isla)) {
-                enIsla = true;
-                y = isla.getY() - (isla.getAlto() / 2 + alto / 2); // Colocarlo justo sobre la isla
-                islaActual = isla;
-                velocidadX = (random.nextBoolean() ? 1 : -1) * 0.5;
-                return;
+    // Método para la caída
+    public void caer() {
+        if (!enIsla && contadorEspera <= 0) {
+            y += 2; // Velocidad de caída
+            if (y > 600) { // Si la tortuga cae fuera de la pantalla, inicia la espera
+                iniciarEspera();
             }
         }
-        this.y += 1; // La tortuga sigue cayendo
     }
 
-    // Método para verificar si la isla tiene la casa de los gnomos
-    private boolean islaEsCasa(Isla isla, Casa casa) {
-        // Comprueba si la isla actual es la isla donde está la casa de los gnomos
-        return casa != null && isla.getX() == casa.getX() && isla.getY() == casa.getY();
+    // Inicia el tiempo de espera antes de reaparecer
+    private void iniciarEspera() {
+        contadorEspera = tiempoEspera;
     }
 
-    // Método para mover en la isla de borde a borde
-    private void moverEnIsla() {
-        this.x += velocidadX;
+    // Reinicia la tortuga en la parte superior de la pantalla con nueva posición X
+    private void reiniciar() {
+        iniciarEspera();
+        x = generarPosicionXInicial();
+        y = 0;
+        enIsla = false;
+    }
 
-        // Revisar los límites de la isla
-        double limiteIzquierdo = islaActual.getX() - islaActual.getAncho() / 2 + ancho / 2;
-        double limiteDerecho = islaActual.getX() + islaActual.getAncho() / 2 - ancho / 2;
+    // Actualiza la posición y colisiones con las islas
+    public void actualizar(Isla[] islas) {
+        if (contadorEspera > 0) {
+            contadorEspera--;
+            if (contadorEspera == 0) {
+                reiniciar();
+            }
+        } else {
+            boolean estabaEnIsla = enIsla;
+            enIsla = false;
 
-        // Comprobar si la tortuga se sale de los límites
-        if (x <= limiteIzquierdo) {
-            x = limiteIzquierdo; // Colocar la tortuga en el límite izquierdo
-            velocidadX = -velocidadX; // Cambiar dirección al llegar al borde de la isla
-        } else if (x >= limiteDerecho) {
-            x = limiteDerecho; // Colocar la tortuga en el límite derecho
-            velocidadX = -velocidadX; // Cambiar dirección al llegar al borde de la isla
+            for (Isla isla : islas) {
+                if (x + ancho / 2 > isla.getX() - isla.getAncho() / 2 &&
+                    x - ancho / 2 < isla.getX() + isla.getAncho() / 2 &&
+                    y + alto / 2 >= isla.getY() - isla.getAlto() / 2 &&
+                    y + alto / 2 <= isla.getY() + isla.getAlto() / 2) {
+                    enIsla = true;
+                    y = isla.getY() - (isla.getAlto() / 2 + alto / 2);
+                    if (!estabaEnIsla) {
+                        direccion = (random.nextFloat() < 0.5) ? 1 : -1;
+                    }
+                    break;
+                }
+            }
+
+            if (!enIsla) {
+                caer();
+            } else {
+                mover();
+            }
         }
     }
 
-    // Verificar si hay colisión con la isla
-    private boolean colisionConIsla(Isla isla) {
-        return x + ancho / 2 > isla.getX() - isla.getAncho() / 2 &&
-               x - ancho / 2 < isla.getX() + isla.getAncho() / 2 &&
-               y + alto / 2 >= isla.getY() - isla.getAlto() / 2 &&
-               y + alto / 2 <= isla.getY() + isla.getAlto() / 2;
-    }
-
-    // Verificar si hay otra tortuga en la misma isla
-    private boolean islaOcupada(Isla[] islas, Isla isla) {
-        for (Isla i : islas) {
-            if (i == isla && i == islaActual) return true;
+    // Mueve la tortuga en la dirección actual si está en una isla
+    public void mover() {
+        x += direccion * 0.5;
+        if (x < 0 || x > 800 - ancho) {
+            direccion *= -1; // Cambia de dirección al llegar a los bordes
         }
-        return false;
     }
 
-    // Método para dibujar la tortuga
+    // Dibuja la tortuga en pantalla si no está en tiempo de espera
     public void dibujar(Entorno entorno) {
-        entorno.dibujarRectangulo(this.x, this.y, this.ancho, this.alto, 0, color);
+        if (contadorEspera <= 0) {
+            entorno.dibujarRectangulo(x + ancho / 2, y + alto / 2, ancho, alto, 0, Color.WHITE);
+        }
     }
 
-    // Métodos getters
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getAncho() { return ancho; }
-    public double getAlto() { return alto; }
+    // Getters
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
 }

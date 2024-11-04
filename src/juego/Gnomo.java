@@ -10,7 +10,7 @@ public class Gnomo {
     private boolean enIsla; // Para saber si está en una isla
     private float direccion; // 1 = derecha, -1 = izquierda
     private int contadorEspera; // Contador para el tiempo de espera antes de reaparecer
-    private final int tiempoEspera = 300; // Tiempo de espera en ticks (ajústalo según la velocidad del juego)
+    private final int tiempoEspera = 120; // Tiempo de espera en ticks (ajústalo según la velocidad del juego)
 
     // Constructor
     public Gnomo(int x, int y, int ancho, int alto, Color color) {
@@ -58,7 +58,7 @@ public class Gnomo {
         }
     }
 
-    public void iniciarEspera() {
+    private void iniciarEspera() {
         // Inicia el tiempo de espera antes de reaparecer
         contadorEspera = tiempoEspera;
         
