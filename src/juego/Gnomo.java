@@ -1,7 +1,10 @@
 package juego;
 
 import java.awt.Color;
+import java.awt.Image;
+
 import entorno.Entorno;
+import entorno.Herramientas;
 
 public class Gnomo {
     private float x, y;
@@ -11,7 +14,10 @@ public class Gnomo {
     private float direccion; // 1 = derecha, -1 = izquierda
     private int contadorEspera; // Contador para el tiempo de espera antes de reaparecer
     private final int tiempoEspera = 300; // Tiempo de espera en ticks (ajústalo según la velocidad del juego)
-
+    private Image gnomod;
+    private Image gnomoi;
+    private Image gnomocaer;
+    
     // Constructor
     public Gnomo(int x, int y, int ancho, int alto, Color color) {
         this.x = x;
@@ -22,6 +28,11 @@ public class Gnomo {
         this.enIsla = true;
         this.direccion = (Math.random() < 0.5) ? 1 : -1; // Dirección aleatoria
         this.contadorEspera = 0; // Inicializa el contador de espera
+        
+     // Cargar imágenes
+        gnomod= Herramientas.cargarImagen("recursos/gnomo/gnomod.gif");
+        gnomoi = Herramientas.cargarImagen("recursos/gnomo/gnomoi.gif");  
+        gnomocaer = Herramientas.cargarImagen("recursos/gnomo/gnomocaer.png");
     }
 
     public int getAncho() {
@@ -108,7 +119,17 @@ public class Gnomo {
 
     public void dibujar(Entorno entorno) {
         if (contadorEspera <= 0) { // Dibuja solo si no está en tiempo de espera
-            entorno.dibujarRectangulo(this.x, this.y, this.ancho, this.alto, 0, color); // Color y forma del gnomo
+            Image img;
+
+            // Seleccionar imagen según la dirección
+            if (enIsla) {
+                img = (direccion > 0) ? gnomod : gnomoi; // Si está en una isla, muestra la imagen de movimiento
+            } else {
+                img = gnomocaer; // Si está cayendo, muestra la imagen de caída
+            }
+
+            // Dibuja la imagen en la posición actual
+            entorno.dibujarImagen(img, this.x, this.y, 0); // Dibuja la imagen en la posición x, y
         }
     }
 
