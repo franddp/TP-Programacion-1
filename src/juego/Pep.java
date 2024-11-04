@@ -21,14 +21,10 @@ public class Pep {
         this.color = color;
         this.enSuelo = true;
         this.velocidadY = 0;
-        this.ultimaDir="der";
-        
+        this.ultimaDir = "der";
     }
 
-    public void dibujar(Entorno entorno) {
-        entorno.dibujarRectangulo(x, y, ancho, alto, 0, color);
-    }
-
+    // Métodos de movimiento
     public void moverDerecha(int limiteDerecho) {
         if (x + ancho / 2 < limiteDerecho) {
             x += 4;
@@ -62,12 +58,6 @@ public class Pep {
         this.enSuelo = true;
         this.velocidadY = 0;
     }
-    
-    public Disparo disparar() {
-        disparo = new Disparo(this.x, this.y + (alto / 4), 10, 10, ultimaDir);
-        
-        return disparo;
-    }
 
     public void salirDeIsla() {
         enSuelo = false;
@@ -78,6 +68,13 @@ public class Pep {
         enSuelo = false;
     }
 
+    // Métodos de disparo
+    public Disparo disparar() {
+        disparo = new Disparo(this.x, this.y + (alto / 4), 10, 10, ultimaDir);
+        return disparo;
+    }
+
+    // Métodos de estado
     public boolean estaSaltando() {
         return velocidadY < 0;
     }
@@ -86,6 +83,12 @@ public class Pep {
         return velocidadY > 0;
     }
 
+    // Métodos de dibujo
+    public void dibujar(Entorno entorno) {
+        entorno.dibujarRectangulo(x, y, ancho, alto, 0, color);
+    }
+
+    // Métodos getters
     public int getX() {
         return x;
     }

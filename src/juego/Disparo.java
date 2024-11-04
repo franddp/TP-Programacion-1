@@ -4,7 +4,6 @@ import java.awt.Color;
 import entorno.Entorno;
 
 public class Disparo {
-
     private double x;
     private double y;
     private double ancho;
@@ -24,7 +23,7 @@ public class Disparo {
     public void dibujar(Entorno e) {
         e.dibujarRectangulo(x, y, ancho, alto, 0, Color.YELLOW);
     }
-    
+
     // Método para mover el disparo
     public void mover() {
         if (dir.equals("der")) {
@@ -42,5 +41,34 @@ public class Disparo {
     // Método para verificar colisión con el entorno
     public boolean colisionEntorno(Entorno entorno) {
         return this.x + (this.ancho / 2) >= entorno.ancho() || this.x - (this.ancho / 2) <= 0;
+    }
+    
+ // Método para verificar colisión con una tortuga
+    public boolean colisionConTortuga(Tortuga tortuga) {
+        return this.x + (this.ancho / 2) > tortuga.getX() - (tortuga.getAncho() / 2) &&
+               this.x - (this.ancho / 2) < tortuga.getX() + (tortuga.getAncho() / 2) &&
+               this.y + (this.alto / 2) > tortuga.getY() - (tortuga.getAlto() / 2) &&
+               this.y - (this.alto / 2) < tortuga.getY() + (tortuga.getAlto() / 2);
+    }
+
+    // Métodos getters
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getAncho() {
+        return ancho;
+    }
+
+    public double getAlto() {
+        return alto;
+    }
+
+    public String getDir() {
+        return dir;
     }
 }
