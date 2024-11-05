@@ -43,7 +43,6 @@ public class Disparo {
         return this.x + (this.ancho / 2) >= entorno.ancho() || this.x - (this.ancho / 2) <= 0;
     }
     
- // Método para verificar colisión con una tortuga
     public boolean colisionConTortuga(Tortuga tortuga) {
         return this.x + (this.ancho / 2) > tortuga.getX() - (tortuga.getAncho() / 2) &&
                this.x - (this.ancho / 2) < tortuga.getX() + (tortuga.getAncho() / 2) &&

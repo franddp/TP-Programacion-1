@@ -41,7 +41,7 @@ public class Pep {
 
     public void saltar() {
         if (enSuelo) {
-            velocidadY = -11;
+            velocidadY = -8;
             enSuelo = false;
         }
     }
@@ -104,4 +104,77 @@ public class Pep {
     public int getAlto() {
         return alto;
     }
+
+//Método para verificar colisión con una tortuga
+public boolean colisionConTortuga(Tortuga tortuga) {
+ return this.x + this.ancho / 2 > tortuga.getX() - tortuga.getAncho() / 2 &&
+        this.x - this.ancho / 2 < tortuga.getX() + tortuga.getAncho() / 2 &&
+        this.y + this.alto / 2 > tortuga.getY() - tortuga.getAlto() / 2 &&
+        this.y - this.alto / 2 < tortuga.getY() + tortuga.getAlto() / 2;
+}
+
+public void reaparecer(int nuevoX, int nuevoY) {
+    this.x = nuevoX;
+    this.y = nuevoY;
+}
+
+public Color getColor() {
+	return color;
+}
+
+public boolean isEnSuelo() {
+	return enSuelo;
+}
+
+public double getVelocidadY() {
+	return velocidadY;
+}
+
+public double getGravedad() {
+	return gravedad;
+}
+
+public Disparo getDisparo() {
+	return disparo;
+}
+
+public String getUltimaDir() {
+	return ultimaDir;
+}
+
+public void setX(int x) {
+	this.x = x;
+}
+
+public void setY(int y) {
+	this.y = y;
+}
+
+public void setAncho(int ancho) {
+	this.ancho = ancho;
+}
+
+public void setAlto(int alto) {
+	this.alto = alto;
+}
+
+public void setColor(Color color) {
+	this.color = color;
+}
+
+public void setEnSuelo(boolean enSuelo) {
+	this.enSuelo = enSuelo;
+}
+
+public void setVelocidadY(double velocidadY) {
+	this.velocidadY = velocidadY;
+}
+
+public void setDisparo(Disparo disparo) {
+	this.disparo = disparo;
+}
+
+public void setUltimaDir(String ultimaDir) {
+	this.ultimaDir = ultimaDir;
+}
 }
