@@ -128,9 +128,25 @@ public class Juego extends InterfaceJuego {
             disparo.dibujar(entorno);
             disparo.mover();
 
+            // Verificar si el disparo choca con el borde del entorno
             if (disparo.colisionEntorno(entorno)) {
                 disparo = null;
             } else {
+                // Verificar colisión con islas
+                for (int i = 0; i < islas.length; i++) {
+                    if (disparo == null) break;  // Salir si disparo es null
+
+                    if (islas[i] != null &&
+                        islas[i].getX() + islas[i].getAncho() / 2 > disparo.getX() - disparo.getAncho() / 2 &&
+                        islas[i].getX() - islas[i].getAncho() / 2 < disparo.getX() + disparo.getAncho() / 2 &&
+                        islas[i].getY() + islas[i].getAlto() / 2 > disparo.getY() - disparo.getAlto() / 2 &&
+                        islas[i].getY() - islas[i].getAlto() / 2 < disparo.getY() + disparo.getAlto() / 2) {
+
+                        disparo = null; // Eliminar el disparo tras impactar con una isla
+                        break; // Salir del bucle tras impactar con una isla
+                    }
+                }
+
                 // Verificar colisión con gnomos
                 for (int i = 0; i < gnomos.length; i++) {
                     if (disparo == null) break;  // Salir si disparo es null
@@ -166,6 +182,7 @@ public class Juego extends InterfaceJuego {
                 }
             }
         }
+
 
         for (int i = 0; i < gnomos.length; i++) {
             if (gnomos[i] != null) {

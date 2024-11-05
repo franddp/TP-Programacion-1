@@ -49,6 +49,13 @@ public class Disparo {
                this.y + (this.alto / 2) > tortuga.getY() - (tortuga.getAlto() / 2) &&
                this.y - (this.alto / 2) < tortuga.getY() + (tortuga.getAlto() / 2);
     }
+    
+    public boolean colisionConIsla(Isla isla) {
+        return this.x + (this.ancho / 2) > isla.getX() - (isla.getAncho() / 2) &&
+               this.x - (this.ancho / 2) < isla.getX() + (isla.getAncho() / 2) &&
+               this.y + (this.alto / 2) > isla.getY() - (isla.getAlto() / 2) &&
+               this.y - (this.alto / 2) < isla.getY() + (isla.getAlto() / 2);
+    }
 
     // Métodos getters
     public double getX() {
