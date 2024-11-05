@@ -5,110 +5,125 @@ import entorno.Entorno;
 import entorno.InterfaceJuego;
 
 public class Juego extends InterfaceJuego {
-	private boolean juegoTerminado = false;
-	 private boolean mostrarPantallaCarga = true; // Variable para controlar la pantalla de carga
-    private Entorno entorno;
-    private Isla[] islas;
-    private Pep pep;
-    private Disparo disparo;
-    private Gnomo[] gnomos;
-    private Casa casa;
-    private int gnomosEnPantalla;
-    private int maxGnomos;
-    private Tortuga[] tortugas;
-    private int cantidadTortugas = 3;
-    private int vidas = 3;
-    private int tiempo = 3600; //3600 Esto es equivalente a 60 segundos si cada tick es 1/60 de segundo
-    private int gnomosRescatados = 0;
-    private int enemigosEliminados = 0;
+    // Estado del juego
+    private boolean juegoTerminado = false; // Indica si el juego ha terminado
+    private boolean mostrarPantallaCarga = true; // Controla la visualizacion de la pantalla de carga
+    private Entorno entorno; // Entorno de juego
+    private Isla[] islas; // Array de islas
+    private Pep pep; // Personaje principal
+    private Disparo disparo; // Disparo del personaje 
+    private Gnomo[] gnomos; // Array de gnomos
+    private Casa casa; // Casa donde se llevan los gnomos
+    private int gnomosEnPantalla; // Contador de gnomos visibles
+    private int maxGnomos; // Maximo numero de gnomos permitidos en pantalla
+    private Tortuga[] tortugas; // Array de tortugas
+    private int cantidadTortugas = 3; // Cantidad de tortugas en el juego
+    private int vidas = 3; // Numero de vidas del jugador
+    private int tiempo = 3600; // Tiempo total del juego en ticks
+    private int gnomosRescatados = 0; // Contador de gnomos rescatados
+    private int enemigosEliminados = 0; // Contador de enemigos eliminados
 
-
+    // Constructor del juego
     public Juego() {
+        // Inicializa el entorno del juego
         this.entorno = new Entorno(this, "Proyecto para TP", 800, 600);
 
-
+        // Configuracion inicial
         maxGnomos = 4;
         gnomosEnPantalla = 0;
-        rellenarIslas();
+        rellenarIslas(); // Llenar el array de islas
 
+        // Inicializacion de la casa
         int xCasa = 400;
         int yCasa = 65;
-        this.casa = new Casa(xCasa, yCasa, 60, 30, Color.RED);
+        this.casa = new Casa(xCasa, yCasa, 60, 30, Color.RED); // Casa de color rojo
 
+        // Posicion inicial de Pep
         int posicionInicialPepX = islas[0].getX();
-        int posicionInicialPepY = islas[0].getY() - 50 / 2;
-        this.pep = new Pep(posicionInicialPepX, posicionInicialPepY, 25, 25, Color.RED);
+        int posicionInicialPepY = islas[0].getY() - 50 / 2; // Ajuste de altura
+        this.pep = new Pep(posicionInicialPepX, posicionInicialPepY, 25, 25, Color.RED); // Personaje Pep
 
+        // Inicializacion de gnomos
         gnomos = new Gnomo[maxGnomos];
 
+        // Inicializacion de tortugas
         this.tortugas = new Tortuga[cantidadTortugas];
         for (int i = 0; i < cantidadTortugas; i++) {
-            int posicionInicialX = 30 + i * 250;
-            int posicionInicialY = islas[i + 1].getY() - 20;
-            tortugas[i] = new Tortuga(posicionInicialX, posicionInicialY);
+            int posicionInicialX = 30 + i * 250; // Posicion inicial de cada tortuga
+            int posicionInicialY = islas[i + 1].getY() - 20; // Ajuste en la posicion vertical
+            tortugas[i] = new Tortuga(posicionInicialX, posicionInicialY); // Crear tortuga
         }
 
-        this.entorno.iniciar();
+        this.entorno.iniciar(); // Inicia el entorno del juego
     }
 
+    // Metodo principal que se ejecuta en cada tick del juego
     public void tick() {
-    	
-    	if (mostrarPantallaCarga) {
+        // Mostrar pantalla de carga si corresponde
+        if (mostrarPantallaCarga) {
             mostrarPantallaCarga(); // Muestra la pantalla de carga
             return;
         }
-    	
-    	if (!juegoTerminado) {
-    		entorno.cambiarFont("Arial", 15, Color.CYAN);
+        
+        // Actualizar estado del juego si no ha terminado
+        if (!juegoTerminado) {
+            // Mostrar informacion en pantalla
+            entorno.cambiarFont("Arial", 15, Color.CYAN);
             entorno.escribirTexto("Vidas: " + vidas, 10, 15);
             entorno.escribirTexto("Tiempo: " + (tiempo / 60), 10, 55); // Convertir ticks a segundos
-            entorno.escribirTexto("EnemigosEliminados: " + enemigosEliminados , 10, 35);
+            entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, 10, 35);
             entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, 10, 75);
 
-        tiempo--; //por cada tick baja el tiempo
-        
-        if (entorno.estaPresionada(entorno.TECLA_DERECHA)) {
-            pep.moverDerecha(800);
-        }
-        if (entorno.estaPresionada(entorno.TECLA_IZQUIERDA)) {
-            pep.moverIzquierda();
-        }
-        if (entorno.estaPresionada(entorno.TECLA_ARRIBA)) {
-            pep.saltar();
-        }
-
-        pep.caer();
-
-        boolean pepSobreIsla = false;
-
-        for (Isla isla : islas) {
-            if (pep.estaSaltando() &&
-                pep.getY() - pep.getAlto() / 2 <= isla.getY() + isla.getAlto() / 2 &&
-                pep.getY() > isla.getY() &&
-                pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
-                pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
-                
-                pep.caerInmediatamente();
+            tiempo--; // Decrementar el tiempo por cada tick
+            
+            // Control de movimiento de Pep
+            if (entorno.estaPresionada(entorno.TECLA_DERECHA)) {
+                pep.moverDerecha(800); // Mover a la derecha
+            }
+            if (entorno.estaPresionada(entorno.TECLA_IZQUIERDA)) {
+                pep.moverIzquierda(); // Mover a la izquierda
+            }
+            if (entorno.estaPresionada(entorno.TECLA_ARRIBA)) {
+                pep.saltar(); // Saltar
             }
 
-            if (pep.estaCayendo() &&
-                pep.getY() + pep.getAlto() / 2 >= isla.getY() - isla.getAlto() / 2 &&
-                pep.getY() < isla.getY() &&
-                pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
-                pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
-                
-                pep.detenerSaltoEnIsla(isla.getY() - isla.getAlto() / 2);
-                pepSobreIsla = true;
+            pep.caer(); // Aplicar gravedad a Pep
+
+            boolean pepSobreIsla = false; // Flag para verificar si Pep esta sobre una isla
+
+            // Verificar colisiones de Pep con las islas
+            for (Isla isla : islas) {
+                // Comprobar si Pep esta saltando y colisiona con la isla
+                if (pep.estaSaltando() &&
+                    pep.getY() - pep.getAlto() / 2 <= isla.getY() + isla.getAlto() / 2 &&
+                    pep.getY() > isla.getY() &&
+                    pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
+                    pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
+                    
+                    pep.caerInmediatamente(); // Pep cae inmediatamente si colisiona al saltar
+                }
+
+                // Comprobar si Pep esta cayendo y colisiona con la isla
+                if (pep.estaCayendo() &&
+                    pep.getY() + pep.getAlto() / 2 >= isla.getY() - isla.getAlto() / 2 &&
+                    pep.getY() < isla.getY() &&
+                    pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
+                    pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
+                    
+                    pep.detenerSaltoEnIsla(isla.getY() - isla.getAlto() / 2); // Detener el salto en la isla
+                    pepSobreIsla = true; // Pep esta sobre la isla
+                }
             }
-        }
 
-        if (!pepSobreIsla) {
-            pep.salirDeIsla();
-        }
+            // Si Pep no esta sobre ninguna isla, actualizar su estado
+            if (!pepSobreIsla) {
+                pep.salirDeIsla(); // Pep sale de la isla si no esta sobre ella
+            }
 
-        if (!pepSobreIsla && (pep.estaCayendo() || pep.getY() < 500)) {
-            pep.caer();
-        }
+            // Si Pep no esta sobre una isla y esta cayendo, aplicar caida
+            if (!pepSobreIsla && (pep.estaCayendo() || pep.getY() < 500)) {
+                pep.caer(); // Pep continua cayendo
+            }
      // Verificar si Pep cae fuera de la pantalla
         if (pep.getY() > 600) {
             vidas--; // Pierde una vida
@@ -149,20 +164,23 @@ public class Juego extends InterfaceJuego {
 
                 // Verificar colisión con gnomos
                 for (int i = 0; i < gnomos.length; i++) {
-                    if (disparo == null) break;  // Salir si disparo es null
-                    
-                    if (gnomos[i] != null &&
-                        gnomos[i].getX() + gnomos[i].getAncho() / 2 > disparo.getX() - disparo.getAncho() / 2 &&
-                        gnomos[i].getX() - gnomos[i].getAncho() / 2 < disparo.getX() + disparo.getAncho() / 2 &&
-                        gnomos[i].getY() + gnomos[i].getAlto() / 2 > disparo.getY() - disparo.getAlto() / 2 &&
-                        gnomos[i].getY() - gnomos[i].getAlto() / 2 < disparo.getY() + disparo.getAlto() / 2) {
+                	if (pep.getY() > islas[2].getY()) {
+                		if (disparo == null) break;  // Salir si disparo es null
                         
-                        gnomos[i] = null; // Eliminar al gnomo
-                        gnomosRescatados++; // Aumentar el puntaje
-                        disparo = null; // Eliminar el disparo tras impactar
-                        break; // Salir del bucle tras eliminar un gnomo
+                        if (gnomos[i] != null &&
+                            gnomos[i].getX() + gnomos[i].getAncho() / 2 > disparo.getX() - disparo.getAncho() / 2 &&
+                            gnomos[i].getX() - gnomos[i].getAncho() / 2 < disparo.getX() + disparo.getAncho() / 2 &&
+                            gnomos[i].getY() + gnomos[i].getAlto() / 2 > disparo.getY() - disparo.getAlto() / 2 &&
+                            gnomos[i].getY() - gnomos[i].getAlto() / 2 < disparo.getY() + disparo.getAlto() / 2 ) {
+                            
+                            gnomos[i] = null; // Eliminar al gnomo
+                            gnomosRescatados++; // Aumentar el puntaje
+                            disparo = null; // Eliminar el disparo tras impactar
+                            break; // Salir del bucle tras eliminar un gnomo
+                        }
                     }
-                }
+                	}
+                    
 
                 // Verificar colisión con tortugas
                 for (int i = 0; i < tortugas.length; i++) {
@@ -287,13 +305,17 @@ public class Juego extends InterfaceJuego {
 
         
         
-
+        //Dibujar las islas
         for (Isla isla : islas) {
             isla.dibujar(entorno);
         }
+        //Dibujar la casa
         casa.dibujar(entorno);
+        
+        //Dibujar a Pep
         pep.dibujar(entorno);
-
+        
+        //Dibujar los gnomos
         for (Gnomo gnomo : gnomos) {
             if (gnomo != null) {
                 gnomo.dibujar(entorno);
@@ -332,7 +354,7 @@ public class Juego extends InterfaceJuego {
         }
     }
 
-    
+    //Metodo para crear gnomos
     private void crearGnomoDesdeCasa() {
         if (gnomosEnPantalla < maxGnomos) {
             int xGnomo = casa.getX() + casa.getAncho() / 2 - 12;
