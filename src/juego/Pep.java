@@ -1,10 +1,7 @@
 package juego;
 
 import java.awt.Color;
-import java.awt.Image;
-
 import entorno.Entorno;
-import entorno.Herramientas;
 
 public class Pep {
     private int x, y;
@@ -15,16 +12,7 @@ public class Pep {
     private final double gravedad = 0.4;
     private Disparo disparo;
     private String ultimaDir;
-    private boolean sobreNave;// Nueva variable para verificar si está sobre la nave
-    private Image img;
-    private Image correrd;
-    private Image correri;
-    private Image saltod;
-    private Image saltoi;
-    private Image quietod;
-    private Image quietoi;
-    private int ultimaX;
-    private int ultimaY;
+    private boolean sobreNave; // Nueva variable para verificar si está sobre la nave
 
     public Pep(int x, int y, int ancho, int alto, Color color) {
         this.x = x;
@@ -36,17 +24,6 @@ public class Pep {
         this.velocidadY = 0;
         this.ultimaDir = "der";
         this.sobreNave = false; // Inicialmente no está sobre la nave
-        
-     // Cargar las imágenes solo una vez
-        correrd = Herramientas.cargarImagen("recursos/imagenes/correrd.gif");
-        correri = Herramientas.cargarImagen("recursos/imagenes/correri.gif");
-        saltod = Herramientas.cargarImagen("recursos/imagenes/saltod.gif");
-        saltoi = Herramientas.cargarImagen("recursos/imagenes/saltoi.gif");
-        quietod = Herramientas.cargarImagen("recursos/imagenes/quietod.gif");
-        quietoi=Herramientas.cargarImagen("recursos/imagenes/quietoi.gif");
-        
-        // Inicializar ultima posición
-        actualizarPosicion();
     }
 
     // Métodos de movimiento
@@ -104,16 +81,6 @@ public class Pep {
         velocidadY = gravedad;
         enSuelo = false;
     }
-    
-    private void actualizarPosicion() {
-        ultimaX = x;
-        ultimaY = y;
-    }
-    
-    // Comprueba si Pep no se movió desde la última posición registrada
-    public boolean estaQuieto() {
-        return x == ultimaX && y == ultimaY;
-    }
 
     // Métodos de disparo
     public Disparo disparar() {
@@ -130,29 +97,9 @@ public class Pep {
         return velocidadY > 0;
     }
 
+    // Métodos de dibujo
     public void dibujar(Entorno entorno) {
-        Image img;
-        // Si Pep está quieto, selecciona la imagen correspondiente
-        if (estaQuieto()) {
-            img = quietod; // Imagen de Pep quieto mirando a la derecha
-        } 
-        // Si Pep está quieto y la última dirección fue a la izquierda
-        else if (ultimaDir.equals("izq")) {
-            img = quietoi; // Imagen de Pep quieto mirando a la izquierda
-        } 
-        // Si Pep está saltando o cayendo
-        else if (!enSuelo) {
-            img = ultimaDir.equals("der") ? saltod : saltoi; // Selecciona la imagen de salto según la dirección
-        } 
-        // Si Pep se está moviendo en el suelo
-        else {
-            img = ultimaDir.equals("der") ? correrd : correri; // Selecciona la imagen de correr según la dirección
-        }
-        // Dibuja la imagen en la posición actual
-       
-        entorno.dibujarImagen(img, x, y, 0, 0.1);
-        // Actualizar posición después de dibujar
-        actualizarPosicion();
+        entorno.dibujarRectangulo(x, y, ancho, alto, 0, color);
     }
 
     // Métodos getters
