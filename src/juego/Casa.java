@@ -24,7 +24,7 @@ public class Casa {
         entorno.dibujarRectangulo(x, y, ancho, alto, 0, color);
     }
 
-    // Métodos para obtener la posición y dimensiones 
+    // Métodos para obtener la posición y dimensiones (si son necesarios)
     public int getX() {
         return x;
     }

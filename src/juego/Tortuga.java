@@ -25,16 +25,26 @@
 	        this.enIsla = false;
 	        this.color = Color.PINK;
 	        this.random = new Random();
-	        generarPosicionAleatoria(limiteCasaGnomosX, limiteCasaGnomosAncho);
+	        generarPosicionAleatoria();
 	        
 	    }
 
-	    // Método para generar una posición aleatoria en X, evitando el área de la casa de los gnomos
-	    private void generarPosicionAleatoria(double limiteCasaGnomosX, double limiteCasaGnomosAncho) {
+	    private void generarPosicionAleatoria() {
 	        do {
-	            this.x = random.nextInt(800 - (int) ancho);
-	        } while (this.x >= limiteCasaGnomosX && this.x <= (limiteCasaGnomosX + limiteCasaGnomosAncho));
-	    }
+	        	if (random.nextBoolean()) {
+	        		this.x = random.nextInt(200);
+	        	} else {
+	        		this.x = random.nextInt(560,780);  // Generamos un valor aleatorio para x
+	        	}
+	            
+	        } while (this.x >= 390 && this.x <= 530);  
+	    
+
+	        
+	        System.out.println("Generando posición x: " + this.x);  // Para depurar
+	        }   
+	    
+	    	
 
 
 	    // Método para verificar si la isla es la que tiene la casa de los gnomos

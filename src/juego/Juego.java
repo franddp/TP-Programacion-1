@@ -1,129 +1,259 @@
 package juego;
 
 import java.awt.Color;
+import javax.sound.sampled.*;
 import entorno.Entorno;
+import entorno.Herramientas;
 import entorno.InterfaceJuego;
 
 public class Juego extends InterfaceJuego {
-    // Estado del juego
-    private boolean juegoTerminado = false; // Indica si el juego ha terminado
-    private boolean mostrarPantallaCarga = true; // Controla la visualizacion de la pantalla de carga
-    private Entorno entorno; // Entorno de juego
-    private Isla[] islas; // Array de islas
-    private Pep pep; // Personaje principal
-    private Disparo disparo; // Disparo del personaje 
-    private Gnomo[] gnomos; // Array de gnomos
-    private Casa casa; // Casa donde se llevan los gnomos
-    private int gnomosEnPantalla; // Contador de gnomos visibles
-    private int maxGnomos; // Maximo numero de gnomos permitidos en pantalla
-    private Tortuga[] tortugas; // Array de tortugas
-    private int cantidadTortugas = 3; // Cantidad de tortugas en el juego
-    private int vidas = 3; // Numero de vidas del jugador
-    private int tiempo = 3600; // Tiempo total del juego en ticks
-    private int gnomosRescatados = 0; // Contador de gnomos rescatados
-    private int enemigosEliminados = 0; // Contador de enemigos eliminados
+	
+	private boolean juegoTerminado = false;
+	private boolean juegoGanado = false;
+	private boolean mostrarPantallaCarga = true;// Variable para controlar la pantalla de carga
+	//private boolean mostrarPantallaVictoria = true;
+	//private boolean modoDificil = false;
+    private Entorno entorno;
+    private Isla[] islas;
+    private NaveDeCombateAerea nave;
+    private Pep pep;
+    private Disparo disparo;
+    private Gnomo[] gnomos;
+    private Casa casa;
+    private Tortuga[] tortugas;
+    private int gnomosEnPantalla;
+    private int maxGnomos;
+    private int cantidadTortugas = 3;
+    private int vidas = 3;
+    private int tiempo = 3600; //3600 Esto es equivalente a 60 segundos si cada tick es 1/60 de segundo
+    private int gnomosRescatados = 0;
+    private int enemigosEliminados = 0;
+    private java.awt.Image FondoFinal;
+    private java.awt.Image FondoPantallaCarga;
+    private java.awt.Image Fondo;
+    private java.awt.Image FondoVictoria;
+    private Clip clip;  // Variable para almacenar la musica de pantalla de carga
+    private Clip clipJuego; // Variable para almacenar la musica de cuando se esta jugando
+    private Clip clipDerrota; // Variable para almacenar la musica de cuando se pierda
+    private Clip clipVictoria; // Variable para almacenar la musica de cuando se gane
+    private boolean musicaPantallaCarga = true; // Para saber si la música está sonando
 
-    // Constructor del juego
+
     public Juego() {
-        // Inicializa el entorno del juego
         this.entorno = new Entorno(this, "Proyecto para TP", 800, 600);
-
-        // Configuracion inicial
-        maxGnomos = 4;
-        gnomosEnPantalla = 0;
-        rellenarIslas(); // Llenar el array de islas
-
-        // Inicializacion de la casa
-        int xCasa = 400;
-        int yCasa = 65;
-        this.casa = new Casa(xCasa, yCasa, 60, 30, Color.RED); // Casa de color rojo
-
-        // Posicion inicial de Pep
-        int posicionInicialPepX = islas[0].getX();
-        int posicionInicialPepY = islas[0].getY() - 50 / 2; // Ajuste de altura
-        this.pep = new Pep(posicionInicialPepX, posicionInicialPepY, 25, 25, Color.RED); // Personaje Pep
-
-        // Inicializacion de gnomos
-        gnomos = new Gnomo[maxGnomos];
-
-        // Inicializacion de tortugas
-        this.tortugas = new Tortuga[cantidadTortugas];
-        for (int i = 0; i < cantidadTortugas; i++) {
-            int posicionInicialX = 30 + i * 250; // Posicion inicial de cada tortuga
-            int posicionInicialY = islas[i + 1].getY() - 20; // Ajuste en la posicion vertical
-            tortugas[i] = new Tortuga(posicionInicialX, posicionInicialY); // Crear tortuga
-        }
-
-        this.entorno.iniciar(); // Inicia el entorno del juego
+        FondoFinal=Herramientas.cargarImagen("Recursos/Imagenes/FondoFinal.jpeg");
+        FondoPantallaCarga=Herramientas.cargarImagen("Recursos/Imagenes/FondoPantallaCarga.jpeg");
+        Fondo=Herramientas.cargarImagen("Recursos/Imagenes/Fondo.jpeg");
+        FondoVictoria=Herramientas.cargarImagen("Recursos/Imagenes/FondoVictoria.gif");
+     // Redimensionar la imagen de la pantalla de carga para que se ajuste a la ventana
+        FondoPantallaCarga = FondoPantallaCarga.getScaledInstance(entorno.ancho(), entorno.alto(), java.awt.Image.SCALE_SMOOTH);
+        FondoFinal = FondoFinal.getScaledInstance(entorno.ancho(), entorno.alto(), java.awt.Image.SCALE_SMOOTH);
+        Fondo = Fondo.getScaledInstance(entorno.ancho(), entorno.alto(), java.awt.Image.SCALE_SMOOTH);
+        iniciarMusicaCarga("src/Recursos/Sonidos/MusicaPantallaCarga.wav");
+        iniciarMusicaJugando("src/Recursos/Sonidos/Musica Jugando.wav");
+        iniciarMusicaDerrota("src/Recursos/Sonidos/Musica Derrota.wav");
+        iniciarMusicaVictoria("src/Recursos/Sonidos/Musica Victoria.wav");
     }
 
-    // Metodo principal que se ejecuta en cada tick del juego
+    private void iniciarMusicaCarga(String rutaArchivo) {
+        try {
+            // Cargar el archivo de audio
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new java.io.File(rutaArchivo));
+            clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);  // Reproducir en bucle
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error al cargar o reproducir la música.");
+        }
+        
+    }
+        private void iniciarMusicaJugando(String rutaArchivo) {
+            try {
+                AudioInputStream audioStream = AudioSystem.getAudioInputStream(new java.io.File(rutaArchivo));
+                clipJuego = AudioSystem.getClip();
+                clipJuego.open(audioStream);
+                clipJuego.loop(Clip.LOOP_CONTINUOUSLY);  // Reproducir en bucle
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error al cargar o reproducir la música del juego.");
+            }
+        } 
+            private void iniciarMusicaDerrota(String rutaArchivo) {
+                try {
+                    // Cargar el archivo de audio
+                    AudioInputStream audioStream = AudioSystem.getAudioInputStream(new java.io.File(rutaArchivo));
+                    clipDerrota = AudioSystem.getClip();
+                    clipDerrota.open(audioStream);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.out.println("Error al cargar o reproducir la música.");
+                }
+            }
+                private void iniciarMusicaVictoria(String rutaArchivo) {
+                    try {
+                        // Cargar el archivo de audio
+                        AudioInputStream audioStream = AudioSystem.getAudioInputStream(new java.io.File(rutaArchivo));
+                        clipVictoria = AudioSystem.getClip();
+                        clipVictoria.open(audioStream);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.out.println("Error al cargar o reproducir la música.");
+                    }
+            
+        maxGnomos = 4;
+        gnomosEnPantalla = 0;
+        rellenarIslas();
+
+        int xCasa = 400;
+        int yCasa = 65;
+        this.casa = new Casa(xCasa, yCasa, 60, 30, Color.RED);
+
+        int posicionInicialPepX = islas[0].getX();
+        int posicionInicialPepY = islas[0].getY() - 50 / 2;
+        this.pep = new Pep(posicionInicialPepX, posicionInicialPepY, 25, 25, Color.RED);
+        
+        int posicionInicialNaveX = islas[0].getX();
+        int posicionInicialNaveY = islas[0].getY() + 60;
+        this.nave = new NaveDeCombateAerea(posicionInicialNaveX, posicionInicialNaveY, 100, 25, Color.ORANGE);
+
+        gnomos = new Gnomo[maxGnomos];
+        this.tortugas = new Tortuga[cantidadTortugas];
+        for (int i = 0; i < cantidadTortugas; i++) {
+            int posicionInicialY = 200;
+            tortugas[i] = new Tortuga(0, posicionInicialY);
+        }
+
+        this.entorno.iniciar();
+    }
+
     public void tick() {
-        // Mostrar pantalla de carga si corresponde
-        if (mostrarPantallaCarga) {
+    	
+    	
+//    	if (gnomosRescatados >10) {
+//    		mostrarPantallaVictoria();
+//    		new Juego();
+//    		this.vidas=1;
+//    		
+//    		
+//    	}
+    	
+    	
+    	if (mostrarPantallaCarga) {
+    		clipJuego.stop();
             mostrarPantallaCarga(); // Muestra la pantalla de carga
             return;
         }
-        
-        // Actualizar estado del juego si no ha terminado
-        if (!juegoTerminado) {
-            // Mostrar informacion en pantalla
-            entorno.cambiarFont("Arial", 15, Color.CYAN);
-            entorno.escribirTexto("Vidas: " + vidas, 10, 15);
-            entorno.escribirTexto("Tiempo: " + (tiempo / 60), 10, 55); // Convertir ticks a segundos
-            entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, 10, 35);
-            entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, 10, 75);
+    	entorno.dibujarImagen(Fondo, entorno.ancho() / 2, entorno.alto() / 2, 0);
+    	
+    	
 
-            tiempo--; // Decrementar el tiempo por cada tick
+    	if (!juegoTerminado && !juegoGanado) {
+    		
+    	int xVidas = entorno.ancho() - 800;
+        int yVidas = 17;
+        int xTiempo = entorno.ancho() - 800;
+        int yTiempo = 57;
+        int xGnomosRescatados = entorno.ancho() - 800;
+        int yGnomosRescatados = 77;
+        int xEnemigosDerrotados = entorno.ancho() - 800;
+        int yEnemigosDerrotados = 37;
+
+        // Color de borde
+        Color colorBorde = Color.BLACK;
+
+        // Dibujar el texto del borde desplazado (para el título)
+        entorno.cambiarFont("Arial", 24, colorBorde);
+        entorno.escribirTexto("Vidas: " + vidas, xVidas - 2, yVidas - 2);
+        entorno.escribirTexto("Vidas: " + vidas, xVidas + 2, yVidas - 2);
+        entorno.escribirTexto("Vidas: " + vidas, xVidas - 2, yVidas + 2);
+        entorno.escribirTexto("Vidas: " + vidas, xVidas + 2, yVidas + 2);
+        
+        entorno.escribirTexto("Tiempo: " + (tiempo / 60), xTiempo - 2, yTiempo - 2);
+        entorno.escribirTexto("Tiempo: " + (tiempo / 60), xTiempo + 2, yTiempo - 2);
+        entorno.escribirTexto("Tiempo: " + (tiempo / 60), xTiempo - 2, yTiempo + 2);
+        entorno.escribirTexto("Tiempo: " + (tiempo / 60), xTiempo + 2, yTiempo + 2);
+        
+        // Dibujar el texto del borde desplazado (para 'Salir')
+        entorno.escribirTexto("EnemigosEliminados: " + enemigosEliminados, xEnemigosDerrotados - 2, yEnemigosDerrotados - 2);
+        entorno.escribirTexto("EnemigosEliminados: " + enemigosEliminados, xEnemigosDerrotados + 2, yEnemigosDerrotados - 2);
+        entorno.escribirTexto("EnemigosEliminados: " + enemigosEliminados, xEnemigosDerrotados - 2, yEnemigosDerrotados + 2);
+        entorno.escribirTexto("EnemigosEliminados: " + enemigosEliminados, xEnemigosDerrotados + 2, yEnemigosDerrotados + 2);
+    	
+        // Dibujar el texto del borde desplazado (para 'Jugar')
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados - 2, yGnomosRescatados - 2);
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados + 2, yGnomosRescatados - 2);
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados - 2, yGnomosRescatados + 2);
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados + 2, yGnomosRescatados + 2);
+    		entorno.cambiarFont("Arial", 24, Color.ORANGE);
+            entorno.escribirTexto("Vidas: " + vidas, xVidas, yVidas);
+            entorno.escribirTexto("Tiempo: " + (tiempo / 60), xTiempo, yTiempo); // Convertir ticks a segundos
+            entorno.escribirTexto("EnemigosEliminados: " + enemigosEliminados , xEnemigosDerrotados, yEnemigosDerrotados);
+            entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados, yGnomosRescatados);
             
-            // Control de movimiento de Pep
-            if (entorno.estaPresionada(entorno.TECLA_DERECHA)) {
-                pep.moverDerecha(800); // Mover a la derecha
+            if (musicaPantallaCarga && clip != null && clip.isRunning()) {
+                clip.stop();  // Detener la música de la pantalla de carga
+                clipJuego.start();
+                musicaPantallaCarga = false;  // Marcar que la música de la pantalla de carga ya se detuvo
+                if (musicaPantallaCarga = false) {
+                	iniciarMusicaJugando("src/Recursos/Sonidos/MusicaJugando.wav"); // Iniciar la música de juego
+                	
+                }
+                
+            }
+
+        tiempo--; //por cada tick baja el tiempo
+        if (!pep.estaSaltando() && !pep.estaCayendo()) {
+        	if (entorno.estaPresionada(entorno.TECLA_DERECHA)) {
+                pep.moverDerecha(800);
             }
             if (entorno.estaPresionada(entorno.TECLA_IZQUIERDA)) {
-                pep.moverIzquierda(); // Mover a la izquierda
+                pep.moverIzquierda();
             }
             if (entorno.estaPresionada(entorno.TECLA_ARRIBA)) {
-                pep.saltar(); // Saltar
+                pep.saltar();
+            }
+            if (entorno.estaPresionado(entorno.BOTON_DERECHO)) {
+                nave.moverDerecha(800);
+            }
+            if (entorno.estaPresionado(entorno.BOTON_IZQUIERDO)) {
+                nave.moverIzquierda();
+            }
+        }
+        
+        pep.caer();
+
+        boolean pepSobreIsla = false;
+
+        for (Isla isla : islas) {
+            if (pep.estaSaltando() &&
+                pep.getY() - pep.getAlto() / 2 <= isla.getY() + isla.getAlto() / 2 &&
+                pep.getY() > isla.getY() &&
+                pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
+                pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
+                
+                
             }
 
-            pep.caer(); // Aplicar gravedad a Pep
-
-            boolean pepSobreIsla = false; // Flag para verificar si Pep esta sobre una isla
-
-            // Verificar colisiones de Pep con las islas
-            for (Isla isla : islas) {
-                // Comprobar si Pep esta saltando y colisiona con la isla
-                if (pep.estaSaltando() &&
-                    pep.getY() - pep.getAlto() / 2 <= isla.getY() + isla.getAlto() / 2 &&
-                    pep.getY() > isla.getY() &&
-                    pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
-                    pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
-                    
-                    pep.caerInmediatamente(); // Pep cae inmediatamente si colisiona al saltar
-                }
-
-                // Comprobar si Pep esta cayendo y colisiona con la isla
-                if (pep.estaCayendo() &&
-                    pep.getY() + pep.getAlto() / 2 >= isla.getY() - isla.getAlto() / 2 &&
-                    pep.getY() < isla.getY() &&
-                    pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
-                    pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
-                    
-                    pep.detenerSaltoEnIsla(isla.getY() - isla.getAlto() / 2); // Detener el salto en la isla
-                    pepSobreIsla = true; // Pep esta sobre la isla
-                }
+            if (pep.estaCayendo() &&
+                pep.getY() + pep.getAlto() / 2 >= isla.getY() - isla.getAlto() / 2 &&
+                pep.getY() < isla.getY() &&
+                pep.getX() + pep.getAncho() / 2 > isla.getX() - isla.getAncho() / 2 &&
+                pep.getX() - pep.getAncho() / 2 < isla.getX() + isla.getAncho() / 2) {
+                
+                pep.detenerSaltoEnIsla(isla.getY() - isla.getAlto() / 2);
+                pepSobreIsla = true;
             }
+        }
 
-            // Si Pep no esta sobre ninguna isla, actualizar su estado
-            if (!pepSobreIsla) {
-                pep.salirDeIsla(); // Pep sale de la isla si no esta sobre ella
-            }
+        if (!pepSobreIsla) {
+            pep.salirDeIsla();
+        }
 
-            // Si Pep no esta sobre una isla y esta cayendo, aplicar caida
-            if (!pepSobreIsla && (pep.estaCayendo() || pep.getY() < 500)) {
-                pep.caer(); // Pep continua cayendo
-            }
+        if (!pepSobreIsla && (pep.estaCayendo() || pep.getY() < 500)) {
+            pep.caer();
+        }
      // Verificar si Pep cae fuera de la pantalla
         if (pep.getY() > 600) {
             vidas--; // Pierde una vida
@@ -131,9 +261,13 @@ public class Juego extends InterfaceJuego {
                 juegoTerminado = true; // Termina el juego si no quedan vidas
             } else {
                 // Reaparece en la posición inicial
-                pep.reaparecer(islas[0].getX(), islas[0].getY() - 50 / 2);
+            	int posicionInicialPepX = islas[0].getX();
+                int posicionInicialPepY = islas[0].getY() - 50 / 2;
+            	pep = new Pep(posicionInicialPepX, posicionInicialPepY, 25, 25, Color.RED);
             }
         }
+        
+        
 
         if (entorno.sePresiono('c') && disparo == null) {
             disparo = pep.disparar();
@@ -164,23 +298,21 @@ public class Juego extends InterfaceJuego {
 
                 // Verificar colisión con gnomos
                 for (int i = 0; i < gnomos.length; i++) {
-                	if (pep.getY() > islas[2].getY()) {
-                		if (disparo == null) break;  // Salir si disparo es null
-                        
-                        if (gnomos[i] != null &&
-                            gnomos[i].getX() + gnomos[i].getAncho() / 2 > disparo.getX() - disparo.getAncho() / 2 &&
-                            gnomos[i].getX() - gnomos[i].getAncho() / 2 < disparo.getX() + disparo.getAncho() / 2 &&
-                            gnomos[i].getY() + gnomos[i].getAlto() / 2 > disparo.getY() - disparo.getAlto() / 2 &&
-                            gnomos[i].getY() - gnomos[i].getAlto() / 2 < disparo.getY() + disparo.getAlto() / 2 ) {
-                            
-                            gnomos[i] = null; // Eliminar al gnomo
-                            gnomosRescatados++; // Aumentar el puntaje
-                            disparo = null; // Eliminar el disparo tras impactar
-                            break; // Salir del bucle tras eliminar un gnomo
-                        }
-                    }
-                	}
+                    if (disparo == null) break;  // Salir si disparo es null
                     
+                    if (gnomos[i] != null &&
+                        gnomos[i].getX() + gnomos[i].getAncho() / 2 > disparo.getX() - disparo.getAncho() / 2 &&
+                        gnomos[i].getX() - gnomos[i].getAncho() / 2 < disparo.getX() + disparo.getAncho() / 2 &&
+                        gnomos[i].getY() + gnomos[i].getAlto() / 2 > disparo.getY() - disparo.getAlto() / 2 &&
+                        gnomos[i].getY() - gnomos[i].getAlto() / 2 < disparo.getY() + disparo.getAlto() / 2) {
+                        
+                        gnomos[i] = null; // Eliminar al gnomo
+                        gnomosRescatados++; // Aumentar el puntaje
+                        disparo = null; // Eliminar el disparo tras impactar
+                        break; // Salir del bucle tras eliminar un gnomo
+                    }
+                
+                }
 
                 // Verificar colisión con tortugas
                 for (int i = 0; i < tortugas.length; i++) {
@@ -228,8 +360,8 @@ public class Juego extends InterfaceJuego {
                 }
             }
         }
-
-        if (gnomosEnPantalla < maxGnomos) {
+        
+    	  if (gnomosEnPantalla < maxGnomos) {
             crearGnomoDesdeCasa();
         }
 
@@ -271,7 +403,47 @@ public class Juego extends InterfaceJuego {
                 }
             }
         }
+            
+            //Colision entre nave y un gnomo
         
+
+        for (int i = 0; i < gnomos.length; i++) {
+            if (gnomos[i] != null) {
+                if (nave.getY() > 300 &&
+                    nave.getX() + nave.getAncho() / 2 > gnomos[i].getX() - gnomos[i].getAncho() / 2 &&
+                    nave.getX() - nave.getAncho() / 2 < gnomos[i].getX() + gnomos[i].getAncho() / 2 &&
+                    nave.getY() + nave.getAlto() / 2 > gnomos[i].getY() - gnomos[i].getAlto() / 2 &&
+                    nave.getY() - nave.getAlto() / 2 < gnomos[i].getY() + gnomos[i].getAlto() / 2) {
+                    
+                    gnomos[i] = null;
+                    gnomosEnPantalla--;
+                    gnomosRescatados++;
+                }
+            } 
+        }
+        
+        //Colision entre nave y pep
+        	
+            if (pep.estaSaltando() &&
+                pep.getY() - pep.getAlto() / 2 <= nave.getY() + nave.getAlto() / 2 &&
+                pep.getY() > nave.getY() &&
+                pep.getX() + pep.getAncho() / 2 > nave.getX() - nave.getAncho() / 2 &&
+                pep.getX() - pep.getAncho() / 2 < nave.getX() + nave.getAncho() / 2) {
+                
+                pep.caerInmediatamente();
+            }
+
+            if (pep.estaCayendo() &&
+                pep.getY() + pep.getAlto() / 2 >= nave.getY() - nave.getAlto() / 2 &&
+                pep.getY() < nave.getY() &&
+                pep.getX() + pep.getAncho() / 2 > nave.getX() - nave.getAncho() / 2 &&
+                pep.getX() - pep.getAncho() / 2 < nave.getX() + nave.getAncho() / 2) {
+                
+                pep.detenerSaltoEnIsla(nave.getY() - nave.getAlto() / 2);
+                
+            }
+    	}
+    	
      // Reaparición de gnomos al ser eliminados por el disparo o caer fuera de pantalla
         if (gnomosEnPantalla < maxGnomos) {
             for (int i = 0; i < gnomos.length; i++) {
@@ -301,21 +473,19 @@ public class Juego extends InterfaceJuego {
                 tortugas[i] = new Tortuga(posicionInicialX, posicionInicialY);
                 break; // Solo reaparece una tortuga por tick si falta
             }
+            
         }
 
         
         
-        //Dibujar las islas
+
         for (Isla isla : islas) {
             isla.dibujar(entorno);
         }
-        //Dibujar la casa
         casa.dibujar(entorno);
-        
-        //Dibujar a Pep
         pep.dibujar(entorno);
-        
-        //Dibujar los gnomos
+        nave.dibujar(entorno);
+
         for (Gnomo gnomo : gnomos) {
             if (gnomo != null) {
                 gnomo.dibujar(entorno);
@@ -324,28 +494,71 @@ public class Juego extends InterfaceJuego {
         
         if (vidas == 0 || tiempo <= 0) {
             juegoTerminado = true;
+            //mostrarPantallaVictoria();
         }
 
-//        if (juegoTerminado) {
-//            mostrarPantallaFinal(); // Mostrar pantalla final
-//            return;
-//        }
-//    
-
-    
-      
-    }
-
+        if (juegoTerminado) {
+        	mostrarPantallaFinal(); // Mostrar pantalla final
+            detenerMusica();  // Detener la música cuando el juego termine
+            clipJuego.stop();
+            clipDerrota.start();
+            return;
+        }
+        
+        if (gnomosRescatados==10) {
+        	juegoGanado = true;
+        	mostrarPantallaVictoria(); // Mostrar pantalla final
+            detenerMusica();  // Detener la música cuando el juego termine
+            clipJuego.stop();
+            clipVictoria.start();
+            return;
+        }
     }//aca termina el tick
 
     private void mostrarPantallaCarga() {
-        entorno.cambiarFont("Arial", 24, Color.BLUE);
+        entorno.cambiarFont("Arial", 24, Color.ORANGE);
         
-        // Escribir el texto centrado
-        entorno.escribirTexto("Pantalla de Carga", entorno.ancho() / 2, 100); // Título
-        entorno.escribirTexto("Presiona 'J' para Jugar", entorno.ancho() / 2, 150); // Opción Jugar
-        entorno.escribirTexto("Presiona 'E' para Salir", entorno.ancho() / 2, 200); // Opción Salir
+        // Dibujar la imagen de fondo (pantalla de carga)
+        entorno.dibujarImagen(FondoPantallaCarga, entorno.ancho()/2, entorno.alto()/2, 0);
         
+        // Definir las posiciones de los textos
+        int xTitulo = entorno.ancho() - 580;
+        int yTitulo = 90;
+        int xJugar = entorno.ancho() - 650;
+        int yJugar = 550;
+        int xSalir = entorno.ancho() - 350;
+        int ySalir = 550;
+
+        // Color de borde
+        Color colorBorde = Color.BLACK;
+
+        // Dibujar el texto del borde desplazado (para el título)
+        entorno.cambiarFont("Arial", 30, colorBorde);
+        entorno.escribirTexto("INVASION DE LOS ROBOTS", xTitulo - 2, yTitulo - 2);
+        entorno.escribirTexto("INVASION DE LOS ROBOTS", xTitulo + 2, yTitulo - 2);
+        entorno.escribirTexto("INVASION DE LOS ROBOTS", xTitulo - 2, yTitulo + 2);
+        entorno.escribirTexto("INVASION DE LOS ROBOTS", xTitulo + 2, yTitulo + 2);
+
+        // Dibujar el texto del borde desplazado (para 'Jugar')
+        entorno.cambiarFont("Arial", 24, colorBorde);
+        entorno.escribirTexto("Presiona 'J' para Jugar", xJugar - 2, yJugar - 2);
+        entorno.escribirTexto("Presiona 'J' para Jugar", xJugar + 2, yJugar - 2);
+        entorno.escribirTexto("Presiona 'J' para Jugar", xJugar - 2, yJugar + 2);
+        entorno.escribirTexto("Presiona 'J' para Jugar", xJugar + 2, yJugar + 2);
+
+        // Dibujar el texto del borde desplazado (para 'Salir')
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir - 2, ySalir - 2);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir + 2, ySalir - 2);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir - 2, ySalir + 2);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir + 2, ySalir + 2);
+
+        // Ahora dibujamos el texto principal (en color naranja) encima del borde
+        entorno.cambiarFont("Arial", 30, Color.ORANGE);
+        entorno.escribirTexto("INVASION DE LOS ROBOTS", xTitulo, yTitulo);
+        entorno.cambiarFont("Arial", 24, Color.ORANGE);
+        entorno.escribirTexto("Presiona 'J' para Jugar", xJugar, yJugar);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir, ySalir);
+
         // Comprobar entradas
         if (entorno.sePresiono('j')) {
             mostrarPantallaCarga = false; // Iniciar el juego
@@ -354,7 +567,171 @@ public class Juego extends InterfaceJuego {
         }
     }
 
-    //Metodo para crear gnomos
+
+        private void mostrarPantallaFinal() {
+        entorno.cambiarFont("Arial", 24, Color.ORANGE);
+        
+        // Dibujar la imagen de fondo (pantalla de carga)
+        entorno.dibujarImagen(FondoFinal, entorno.ancho()/2, entorno.alto()/2, 0);        
+        // Definir las posiciones de los textos
+        int xTitulo = entorno.ancho() - 580;
+        int yTitulo = 90;
+        int xSubTitulo = entorno.ancho() - 580;
+        int ySubTitulo = 150;
+        int xGnomosRescatados = entorno.ancho() - 750;
+        int yGnomosRescatados = 400;
+        int xEnemigosDerrotados = entorno.ancho() - 750;
+        int yEnemigosDerrotados = 450;
+        int xJugar = entorno.ancho() - 750;
+        int yJugar = 500;
+        int xSalir = entorno.ancho() - 750;
+        int ySalir = 550;
+
+        // Color de borde
+        Color colorBorde = Color.BLACK;
+
+        // Dibujar el texto del borde desplazado (para el título)
+        entorno.cambiarFont("Arial", 30, colorBorde);
+        entorno.escribirTexto("¡DERROTA!", xTitulo - 2, yTitulo - 2);
+        entorno.escribirTexto("¡DERROTA!", xTitulo + 2, yTitulo - 2);
+        entorno.escribirTexto("¡DERROTA!", xTitulo - 2, yTitulo + 2);
+        entorno.escribirTexto("¡DERROTA!", xTitulo + 2, yTitulo + 2);
+        
+        entorno.escribirTexto("GANARON LOS ROBOTS", xSubTitulo - 2, ySubTitulo - 2);
+        entorno.escribirTexto("GANARON LOS ROBOTS", xSubTitulo + 2, ySubTitulo - 2);
+        entorno.escribirTexto("GANARON LOS ROBOTS", xSubTitulo - 2, ySubTitulo + 2);
+        entorno.escribirTexto("GANARON LOS ROBOTS", xSubTitulo + 2, ySubTitulo + 2);
+
+        // Dibujar el texto del borde desplazado (para 'Jugar')
+        entorno.cambiarFont("Arial", 24, colorBorde);
+        entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar - 2, yJugar - 2);
+        entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar + 2, yJugar - 2);
+        entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar - 2, yJugar + 2);
+        entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar + 2, yJugar + 2);
+
+        // Dibujar el texto del borde desplazado (para 'Salir')
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir - 2, ySalir - 2);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir + 2, ySalir - 2);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir - 2, ySalir + 2);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir + 2, ySalir + 2);
+        
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados - 2, yGnomosRescatados - 2);
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados + 2, yGnomosRescatados - 2);
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados - 2, yGnomosRescatados + 2);
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados + 2, yGnomosRescatados + 2);
+        
+        entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados - 2, yEnemigosDerrotados - 2);
+        entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados + 2, yEnemigosDerrotados - 2);
+        entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados - 2, yEnemigosDerrotados + 2);
+        entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados + 2, yEnemigosDerrotados + 2);
+
+        // Ahora dibujamos el texto principal (en color naranja) encima del borde
+        entorno.cambiarFont("Arial", 30, Color.ORANGE);
+        entorno.escribirTexto("¡DERROTA!", xTitulo, yTitulo);
+        entorno.escribirTexto("GANARON LOS ROBOTS", xSubTitulo, ySubTitulo);
+        entorno.cambiarFont("Arial", 24, Color.ORANGE); 
+        entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados, yGnomosRescatados);
+        entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados, yEnemigosDerrotados);
+        entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar, yJugar);
+        entorno.escribirTexto("Presiona 'E' para Salir", xSalir, ySalir);
+        
+            // Comprobar entradas
+            if (entorno.sePresiono('j') ) {
+                new Juego(); // Iniciar el juego
+                detenerMusica();
+            	} if (entorno.sePresiono('e')) {
+                System.exit(0); // Salir del juego
+            		}
+        }
+        
+        private void mostrarPantallaVictoria() {
+            entorno.cambiarFont("Arial", 24, Color.ORANGE);
+            
+            // Dibujar la imagen de fondo (pantalla de carga)
+            entorno.dibujarImagen(FondoVictoria, entorno.ancho()/2, entorno.alto()/2, 0);        
+            // Definir las posiciones de los textos
+            int xTitulo = entorno.ancho() - 580;
+            int yTitulo = 90;
+            int xSubTitulo = entorno.ancho() - 580;
+            int ySubTitulo = 150;
+            int xGnomosRescatados = entorno.ancho() - 550;
+            int yGnomosRescatados = 400;
+            int xEnemigosDerrotados = entorno.ancho() - 550;
+            int yEnemigosDerrotados = 450;
+            int xJugar = entorno.ancho() - 550;
+            int yJugar = 500;
+            int xSalir = entorno.ancho() - 550;
+            int ySalir = 550;
+
+            // Color de borde
+            Color colorBorde = Color.BLACK;
+
+            // Dibujar el texto del borde desplazado (para el título)
+            entorno.cambiarFont("Arial", 30, colorBorde);
+            entorno.escribirTexto("¡VICTORIA!", xTitulo - 2, yTitulo - 2);
+            entorno.escribirTexto("¡VICTORIA!", xTitulo + 2, yTitulo - 2);
+            entorno.escribirTexto("¡VICTORIA!", xTitulo - 2, yTitulo + 2);
+            entorno.escribirTexto("¡VICTORIA!", xTitulo + 2, yTitulo + 2);
+            
+            entorno.escribirTexto("FELICIDADES", xSubTitulo - 2, ySubTitulo - 2);
+            entorno.escribirTexto("FELICIDADES", xSubTitulo + 2, ySubTitulo - 2);
+            entorno.escribirTexto("FELICIDADES", xSubTitulo - 2, ySubTitulo + 2);
+            entorno.escribirTexto("FELICIDADES", xSubTitulo + 2, ySubTitulo + 2);
+
+            // Dibujar el texto del borde desplazado (para 'Jugar')
+            entorno.cambiarFont("Arial", 24, colorBorde);
+            entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar - 2, yJugar - 2);
+            entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar + 2, yJugar - 2);
+            entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar - 2, yJugar + 2);
+            entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar + 2, yJugar + 2);
+
+            // Dibujar el texto del borde desplazado (para 'Salir')
+            entorno.escribirTexto("Presiona 'E' para Salir", xSalir - 2, ySalir - 2);
+            entorno.escribirTexto("Presiona 'E' para Salir", xSalir + 2, ySalir - 2);
+            entorno.escribirTexto("Presiona 'E' para Salir", xSalir - 2, ySalir + 2);
+            entorno.escribirTexto("Presiona 'E' para Salir", xSalir + 2, ySalir + 2);
+            
+            entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados - 2, yGnomosRescatados - 2);
+            entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados + 2, yGnomosRescatados - 2);
+            entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados - 2, yGnomosRescatados + 2);
+            entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados + 2, yGnomosRescatados + 2);
+            
+            entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados - 2, yEnemigosDerrotados - 2);
+            entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados + 2, yEnemigosDerrotados - 2);
+            entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados - 2, yEnemigosDerrotados + 2);
+            entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados + 2, yEnemigosDerrotados + 2);
+
+            // Ahora dibujamos el texto principal (en color naranja) encima del borde
+            entorno.cambiarFont("Arial", 30, Color.ORANGE);
+            entorno.escribirTexto("¡VICTORIA!", xTitulo, yTitulo);
+            entorno.escribirTexto("FELICIDADES", xSubTitulo, ySubTitulo);
+            entorno.cambiarFont("Arial", 24, Color.ORANGE); 
+            entorno.escribirTexto("Gnomos Rescatados: " + gnomosRescatados, xGnomosRescatados, yGnomosRescatados);
+            entorno.escribirTexto("Enemigos Eliminados: " + enemigosEliminados, xEnemigosDerrotados, yEnemigosDerrotados);
+            entorno.escribirTexto("Presiona 'J' para Jugar otra vez", xJugar, yJugar);
+            entorno.escribirTexto("Presiona 'E' para Salir", xSalir, ySalir);
+            
+                // Comprobar entradas
+                if (entorno.sePresiono('j') ) {
+                    new Juego(); // Iniciar el juego
+                    detenerMusica();
+                	} if (entorno.sePresiono('e')) {
+                    System.exit(0); // Salir del juego
+                		}
+            }
+        
+     // Llamar a este método para detener la música cuando el juego comienza o la pantalla de carga termine
+        private void detenerMusica() {
+            if (clip != null && clip.isRunning()) {
+                clip.stop();
+            }
+            if (clipJuego != null && clipJuego.isRunning()) {
+                clipJuego.stop();  // Detener la música de juego
+            }
+        }
+    
+
+    
     private void crearGnomoDesdeCasa() {
         if (gnomosEnPantalla < maxGnomos) {
             int xGnomo = casa.getX() + casa.getAncho() / 2 - 12;
